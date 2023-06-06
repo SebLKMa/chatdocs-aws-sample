@@ -1,17 +1,25 @@
+from dotenv import load_dotenv
 from aws_langchain.kendra_index_retriever import KendraIndexRetriever
+from langchain.chains import LLMChain
 from langchain.chains import ConversationalRetrievalChain
+from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from langchain import OpenAI
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 import sys
 import os
 
 MAX_HISTORY_LENGTH = 5
 
+load_dotenv(dotenv_path="../.env")
+
 def build_chain():
   region = os.environ["AWS_REGION"]
   kendra_index_id = os.environ["KENDRA_INDEX_ID"]
+  llm_key = os.environ["OPENAI_API_KEY"]
 
   llm = OpenAI(batch_size=5, temperature=0, max_tokens=300)
+  streaming_llm = OpenAI(streaming=True, callbacks=[StreamingStdOutCallbackHandler()], temperature=0, openai_api_key=llm_key)
       
   retriever = KendraIndexRetriever(kendraindex=kendra_index_id, 
       awsregion=region, 
@@ -29,8 +37,16 @@ def build_chain():
       template=prompt_template, input_variables=["context", "question"]
   )
 
-  return ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, qa_prompt=PROMPT, return_source_documents=True)
+  #return ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, qa_prompt=PROMPT, return_source_documents=True)
   
+  # Construct a ConversationalRetrievalChain with a streaming llm for combine docs
+  # and a separate, non-streaming llm for question generation
+  question_generator = LLMChain(llm=llm, prompt=PROMPT)
+  doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=PROMPT)
+
+  qa = ConversationalRetrievalChain(
+    retriever=retriever, combine_docs_chain=doc_chain, question_generator=question_generator, return_source_documents=True)
+  return qa
 
 def run_chain(chain, prompt: str, history=[]):
   return chain({"question": prompt, "chat_history": history})
