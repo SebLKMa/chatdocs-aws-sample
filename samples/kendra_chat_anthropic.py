@@ -2,7 +2,7 @@ from dotenv import load_dotenv
 from aws_langchain.kendra_index_retriever import KendraIndexRetriever
 from langchain.chains import ConversationalRetrievalChain
 from langchain.chains import LLMChain
-#from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
+from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
 from langchain.chains.question_answering import load_qa_chain
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 from langchain.prompts import PromptTemplate
@@ -62,10 +62,10 @@ Assistant:
   #qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, qa_prompt=PROMPT, return_source_documents=True)
   # Custom prompt https://python.langchain.com/en/latest/modules/chains/index_examples/vector_db_qa.html#custom-prompts
   #qa = ConversationalRetrievalChain.from_llm(llm=llm, retriever=retriever, condense_question_prompt=PROMPT, return_source_documents=True)
-  
+
   # Construct a ConversationalRetrievalChain with a streaming llm for combine docs
   # and a separate, non-streaming llm for question generation
-  question_generator = LLMChain(llm=llm, prompt=PROMPT)
+  question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
   doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=PROMPT)
 
   qa = ConversationalRetrievalChain(

@@ -6,6 +6,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.prompts import PromptTemplate
 from langchain import OpenAI
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT, QA_PROMPT
 import sys
 import os
 
@@ -41,7 +42,7 @@ def build_chain():
   
   # Construct a ConversationalRetrievalChain with a streaming llm for combine docs
   # and a separate, non-streaming llm for question generation
-  question_generator = LLMChain(llm=llm, prompt=PROMPT)
+  question_generator = LLMChain(llm=llm, prompt=CONDENSE_QUESTION_PROMPT)
   doc_chain = load_qa_chain(streaming_llm, chain_type="stuff", prompt=PROMPT)
 
   qa = ConversationalRetrievalChain(
